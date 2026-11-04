@@ -52,6 +52,19 @@ void publishHeartbeat(){
   }
 }
 
+// envoi et mise à jour du counter régulière sans bloquer (comparaison au temps écoulé sans delay())
+void publishUpdateCounter(){
+  static uint32_t lastCounterTimeMs = 0;
+  static const uint16_t kcounterPeriod = 2000;
+  if(millis() - lastCounterTimeMs >= kcounterPeriod) {
+    lastCounterTimeMs = millis();
+    counter.value++;
+
+    // envoi du counter
+    MPS.publishValue(kSubStatusCounter, counter);
+  }
+}
+
 // ---- Fonctions Arduino ----
 // Exécutée une fois au démarrage
 void setup() {
@@ -84,10 +97,6 @@ void loop() {
   publishHeartbeat();
   
   // ... ajoutez vos envois de données et autres comportements **non bloquants**
-  static uint32_t lastCounterTimeMs = 0;
-  if (millis() - lastCounterTimeMs >= 2000) {
-    lastCounterTimeMs = millis();
-    counter.value++;
-    MPS.publishValue(kSubStatusCounter, counter);
-  }
+  // Appel non bloquant de l'envoi du counter
+  publishUpdateCounter();
 }
