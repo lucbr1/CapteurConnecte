@@ -2,7 +2,6 @@
 #include "config.h"
 
 // ---- Structures de payload ----
-// placer ici vos structures de payloads :
 struct __attribute__((packed)) CounterPayload {
   uint32_t value;
 };
@@ -10,12 +9,10 @@ struct __attribute__((packed)) CounterPayload {
 static_assert(sizeof(CounterPayload) == 4, "CounterPayload = 4 octets"); // Filet de sécurité à la compilation
 
 // ---- Variables globales ----
-// placez ici vos variables à partager entre plusieurs contextes (ex : setup, loop, callbacks)
 static CounterPayload counter = {0};
 
 // ---- Subjects ----
 constexpr mps::Subject kSubHb = mps::makeSubject("hb_" DEVICE_NAME);
-// ... ajoutez vos sujets ici sur le même schéma que le heartbeat, mais en précisant la donnée envoyée,
 constexpr mps::Subject kSubStatusCounter = mps::makeSubject("status_" DEVICE_NAME "_counter");
 constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME "_reset_counter");
 
@@ -23,7 +20,8 @@ constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME
 // Appelé lors de l'ouverture de la session (callback)
 static void onSessionOpened() {
   Serial.println("Session opened!");
-  // republiez ici l’état initial, la passerelle ne garde rien
+  
+  // on publie à l'état initial pour l'IHM
   MPS.publishValue(kSubStatusCounter, counter);
 }
 
@@ -32,7 +30,7 @@ static void onSendFailed(uint16_t sequenceNumber, uint32_t subjectId, mps::SendF
   Serial.printf("/!\\ envoi %u (subject 0x%08lX) perdu\n", sequenceNumber, (unsigned long)subjectId);
 }
 
-// ... ajoutez vos callbacks ici, ex : 
+// Appelé en cas de reset du counter (callback)
 static void onCmdResetCounter(const mps::FrameView& message, void*) {
   if (message.payloadLength != 0) return; // ce format n'a pas de payload
   counter.value = 0;
@@ -52,6 +50,19 @@ void publishHeartbeat(){
   }
 }
 
+// envoi et mise à jour du counter régulière sans bloquer (comparaison au temps écoulé sans delay())
+void publishUpdateCounter(){
+  static uint32_t lastCounterTimeMs = 0;
+  static const uint16_t kcounterPeriod = 2000;
+  if(millis() - lastCounterTimeMs >= kcounterPeriod) {
+    lastCounterTimeMs = millis();
+    counter.value++;
+
+    // envoi du counter
+    MPS.publishValue(kSubStatusCounter, counter);
+  }
+}
+
 // ---- Fonctions Arduino ----
 // Exécutée une fois au démarrage
 void setup() {
@@ -61,7 +72,7 @@ void setup() {
   // enregistrement des callbacks
   MPS.setRegisteredCallback(onSessionOpened);
   MPS.setSendFailedCallback(onSendFailed);
-  // ... ajoutez vos callbacks à l'aide de MPS.on(const mps::Subject& subject, mps::MessageHandler handler, void* userContext = nullptr)
+
   MPS.on(kSubCmdResetCounter, onCmdResetCounter);
 
   // constante d'adresse vide pour vérifier que l'adresse a été définie dans config.h
@@ -82,12 +93,7 @@ void loop() {
 
   // Appel non bloquant de l'envoi d'HB (polling)
   publishHeartbeat();
-  
-  // ... ajoutez vos envois de données et autres comportements **non bloquants**
-  static uint32_t lastCounterTimeMs = 0;
-  if (millis() - lastCounterTimeMs >= 2000) {
-    lastCounterTimeMs = millis();
-    counter.value++;
-    MPS.publishValue(kSubStatusCounter, counter);
-  }
+
+  // Appel non bloquant de l'envoi du counter
+  publishUpdateCounter();
 }
