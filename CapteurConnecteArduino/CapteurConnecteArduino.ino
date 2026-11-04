@@ -2,27 +2,29 @@
 #include "config.h"
 
 // ---- Structures de payload ----
-// placer ici vos structures de payloads, par exemple :
-// struct __attribute__((packed)) SomePayload { // __attribute__((packed)) permet de contrôler la disposition des octets de celle-ci
-//   uint8_t someVariableA;
-//   int16_t someVariableB;
-// };
-// static_assert(sizeof(SomePayload) == 3, "SomePayload = 3 octets"); // Filet de sécurité à la compilation
+// placer ici vos structures de payloads :
+struct __attribute__((packed)) CounterPayload {
+  uint32_t value;
+};
+
+static_assert(sizeof(CounterPayload) == 4, "CounterPayload = 4 octets"); // Filet de sécurité à la compilation
 
 // ---- Variables globales ----
 // placez ici vos variables à partager entre plusieurs contextes (ex : setup, loop, callbacks)
+static CounterPayload counter = {0};
 
 // ---- Subjects ----
 constexpr mps::Subject kSubHb = mps::makeSubject("hb_" DEVICE_NAME);
 // ... ajoutez vos sujets ici sur le même schéma que le heartbeat, mais en précisant la donnée envoyée,
-// par exemple : `constexpr mps::Subject kSubStatusSomeData = mps::makeSubject("status_" DEVICE_NAME "_some_data");`
-// ou : `constexpr mps::Subject kSubCmdSomeOrder = mps::makeSubject("cmd_" DEVICE_NAME "_some_order");`
+constexpr mps::Subject kSubStatusCounter = mps::makeSubject("status_" DEVICE_NAME "_counter");
+constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME "_reset_counter");
 
 // ---- Callbacks ----
 // Appelé lors de l'ouverture de la session (callback)
 static void onSessionOpened() {
   Serial.println("Session opened!");
   // republiez ici l’état initial, la passerelle ne garde rien
+  MPS.publishValue(kSubStatusCounter, counter);
 }
 
 // Appelé en cas d'échec d'envoi (callback)
@@ -31,11 +33,11 @@ static void onSendFailed(uint16_t sequenceNumber, uint32_t subjectId, mps::SendF
 }
 
 // ... ajoutez vos callbacks ici, ex : 
-// static void onCmdSomeOrder(const mps::FrameView& message, void*) {
-//   SomePayload payload;
-//   if(!mps::readPayloadAs(message, &payload)) return;
-//   Serial.printf("Donnée : %02X\n", payload.someVariableA);
-// }
+static void onCmdResetCounter(const mps::FrameView& message, void*) {
+  if (message.payloadLength != 0) return; // ce format n'a pas de payload
+  counter.value = 0;
+  MPS.publishValue(kSubStatusCounter, counter); // l'IHM voit le résultat réel
+}
 
 // ---- Fonctions appelées par setup/loop ----
 // envoi de heartbeats réguliers sans bloquer (comparaison au temps écoulé sans delay())
@@ -60,8 +62,7 @@ void setup() {
   MPS.setRegisteredCallback(onSessionOpened);
   MPS.setSendFailedCallback(onSendFailed);
   // ... ajoutez vos callbacks à l'aide de MPS.on(const mps::Subject& subject, mps::MessageHandler handler, void* userContext = nullptr)
-  // par exemple :
-  // MPS.on(kSubCmdSomeOrder, onCmdSomeOrder);
+  MPS.on(kSubCmdResetCounter, onCmdResetCounter);
 
   // constante d'adresse vide pour vérifier que l'adresse a été définie dans config.h
   static const uint8_t kUnsetMacAddress[6] = {0, 0, 0, 0, 0, 0};
@@ -83,13 +84,10 @@ void loop() {
   publishHeartbeat();
   
   // ... ajoutez vos envois de données et autres comportements **non bloquants**
-  // par exemple :
-  // static uint32_t lastDataStatusTimeMs = 0;
-  // if(millis() - lastDataStatusTimeMs >= 2000){
-  //   lastDataStatusTimeMs = millis();
-  //   SomePayload payload = {0, 0};
-  //   payload.someVariableA = digitalRead(3);
-  //   payload.someVariableB = analogRead(5);
-  //   MPS.publishValue(kSubStatusSomeData, payload);
-  // }
+  static uint32_t lastCounterTimeMs = 0;
+  if (millis() - lastCounterTimeMs >= 2000) {
+    lastCounterTimeMs = millis();
+    counter.value++;
+    MPS.publishValue(kSubStatusCounter, counter);
+  }
 }

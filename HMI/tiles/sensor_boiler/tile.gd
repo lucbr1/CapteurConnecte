@@ -1,8 +1,10 @@
 extends Tile
 
 # ---- CONSTANTES ----
-const DEVICE_NAME = "sensor_boiler"
+const DEVICE_NAME = "sensor_l"
 const SUB_HB = "hb_" + DEVICE_NAME
+const SUB_STATUS_COUNTER = "status_" + DEVICE_NAME + "_counter"
+const SUB_CMD_RESET = "cmd_" + DEVICE_NAME + "_reset_counter"
 ## Délai sans heartbeat au-delà duquel le capteur est considéré comme bloqué (3,5 périodes de 1 s).
 const HB_TIMEOUT_S := 3.5
 ## Durée d'allumage de l'icône de heartbeat à chaque réception.
@@ -21,10 +23,14 @@ var _connected: bool = false:
 		else:
 			_on_sensor_disconnected()
 
+func _ready() -> void:
+	super() # abonne la tuile
+	%ResetButton.pressed.connect(func(): publish(SUB_CMD_RESET, PackedByteArray(), true))
 
 func get_subscriptions() -> PackedStringArray:
 	var subscriptions: PackedStringArray = []
 	subscriptions.append(SUB_HB)
+	subscriptions.append(SUB_STATUS_COUNTER)
 	return subscriptions
 
 
@@ -46,10 +52,13 @@ func on_gateway_reachability_changed(is_gateway_reachable: bool) -> void:
 	_node_id = -1  # la passerelle peut redistribuer les identifiants en redémarrant
 
 
-func on_message(subject_name: String, source_id: int, _payload: PackedByteArray) -> void:
+func on_message(subject_name: String, source_id: int, payload: PackedByteArray) -> void:
 	if subject_name == SUB_HB: _on_hb(source_id)
 	if source_id != _node_id: return # ne traitez que les messages dédiés à votre capteur
 	# Ajoutez vos messages à la suite
+	if subject_name == SUB_STATUS_COUNTER:
+		if payload.size() != 4: return # le contrat : 4 octets, sinon on ignore
+		%CounterLabel.text = "Compteur : %d" % payload.decode_u32(0)
 
 
 func _process(delta: float) -> void:
