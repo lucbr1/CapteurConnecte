@@ -26,8 +26,8 @@ static ButtonPayload Button = {false};
 constexpr mps::Subject kSubHb = mps::makeSubject("hb_" DEVICE_NAME);
 // ... ajoutez vos sujets ici sur le même schéma que le heartbeat, mais en précisant la donnée envoyée,
 constexpr mps::Subject kSubStatusCounter = mps::makeSubject("status_" DEVICE_NAME "_counter");
-constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME "_reset_counter");
 constexpr mps::Subject kSubStatusButton = mps::makeSubject("status_" DEVICE_NAME "_button");
+constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME "_reset_counter");
 
 // ---- Callbacks ----
 // Appelé lors de l'ouverture de la session (callback)
