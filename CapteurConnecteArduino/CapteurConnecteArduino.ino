@@ -1,33 +1,55 @@
+#include <DHT.h>
+#include <DHT_U.h>
 #include <MPS.h>
 #include "config.h"
 
+// Broche du bouton poussoir
 #define BUTTON_PIN 3
+// Broche du capteur
+#define DHT_PIN 0
+
+// Type de capteur
+#define DHTTYPE DHT11
 
 // ---- Structures de payload ----
 // placer ici vos structures de payloads :
+/// Valeur du compteur incrémenté toutes les 2s.
 struct __attribute__((packed)) CounterPayload {
   uint32_t value;
 };
 
+/// État du bouton poussoir.
 struct __attribute__((packed)) ButtonPayload {
   bool state;
 };
 
+/// Température et humidité mesurées par le DHT11.
+struct __attribute__((packed)) DhtPayload {
+  uint16_t temperatureCentiDegrees; // Température, en centièmes de degré Celsius
+  uint8_t humidityPercents; //< Humidité relative, en %
+};
+
 
 static_assert(sizeof(CounterPayload) == 4, "CounterPayload = 4 octets"); // Filet de sécurité à la compilation
-static_assert(sizeof(ButtonPayload) == 1, "CounterPayload = 1 octets"); // Filet de sécurité à la compilation
+static_assert(sizeof(ButtonPayload) == 1, "ButtonPayload = 1 octets"); // Filet de sécurité à la compilation
+static_assert(sizeof(DhtPayload) == 3, "DhtPayload = 3 octets"); // Filet de sécurité à la compilation
 
 // ---- Variables globales ----
 // placez ici vos variables à partager entre plusieurs contextes (ex : setup, loop, callbacks)
 static CounterPayload counter = {0};
-static ButtonPayload Button = {false};
+static ButtonPayload button = {false};
+static DhtPayload dht = {0, 0};
+// Declare un objet de type DHT
+DHT dhtObject(DHT_PIN, DHTTYPE);
 
 // ---- Subjects ----
 constexpr mps::Subject kSubHb = mps::makeSubject("hb_" DEVICE_NAME);
 // ... ajoutez vos sujets ici sur le même schéma que le heartbeat, mais en précisant la donnée envoyée,
 constexpr mps::Subject kSubStatusCounter = mps::makeSubject("status_" DEVICE_NAME "_counter");
-constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME "_reset_counter");
 constexpr mps::Subject kSubStatusButton = mps::makeSubject("status_" DEVICE_NAME "_button");
+constexpr mps::Subject kSubValuesDht = mps::makeSubject("status_" DEVICE_NAME "_dht");
+constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME "_reset_counter");
+
 
 // ---- Callbacks ----
 // Appelé lors de l'ouverture de la session (callback)
@@ -35,7 +57,7 @@ static void onSessionOpened() {
   Serial.println("Session opened!");
   // republiez ici l’état initial, la passerelle ne garde rien
   MPS.publishValue(kSubStatusCounter, counter);
-  MPS.publishValue(kSubStatusButton, Button);
+  MPS.publishValue(kSubStatusButton, button);
 }
 
 // Appelé en cas d'échec d'envoi (callback)
@@ -78,13 +100,29 @@ void publishUpdateCounter(){
 
 // envoie la valeur du bouton si elle a changé 
 void publishStateButton(){
-  if (digitalRead(BUTTON_PIN) == Button.state) return;
-  Button.state = digitalRead(BUTTON_PIN);
+  if (digitalRead(BUTTON_PIN) == button.state) return;
+  button.state = digitalRead(BUTTON_PIN);
   // le message envoie :
 	// quand le bouton est appuye : 0
 	// quand le bouton n'est pas appuye : 1
-  MPS.publishValue(kSubStatusButton, Button.state);
+  MPS.publishValue(kSubStatusButton, button);
 }
+
+// envoi des valeurs lues par le capteur régulier sans bloquer (comparaison au temps écoulé sans delay())
+void publishValuesDht(){
+  static uint32_t lastDhtTimeMs = 0;
+  static const uint16_t kDhtPeriod = 2000;
+  if(millis() - lastDhtTimeMs >= kDhtPeriod) {
+    lastDhtTimeMs = millis();
+
+    dht.temperatureCentiDegrees = uint16_t(dhtObject.readTemperature() * 100);// on multiplie par 100 pour récupérer les centièmes
+    dht.humidityPercents = uint8_t(dhtObject.readHumidity());
+    
+    // envoi des valeurs
+    MPS.publishValue(kSubValuesDht, dht);
+  }
+}
+
 // ---- Fonctions Arduino ----
 // Exécutée une fois au démarrage
 void setup() {
@@ -109,6 +147,13 @@ void setup() {
 
   // démarrage du client MPS
   if(!MPS.begin(kGatewayMacAddress, DEVICE_NAME, kWifiChannel)) Serial.println("MPS: demarrage impossible");
+
+  // Initialise la capteur DHT11
+  dhtObject.begin();
+  // Vérification du bon fonctionnement du capteur
+  if (isnan(dhtObject.readHumidity()) && isnan(dhtObject.readTemperature())) {
+    Serial.println("DHT: demarrage impossible (capteur introuvable ou defectueux)");
+  }
 }
 
 // Exécutée en boucle (= while(true))
@@ -123,5 +168,9 @@ void loop() {
   // Appel non bloquant de l'envoi du counter
   publishUpdateCounter();
 
+  // Appel non bloquant de l'envoi de l'état du bouton
   publishStateButton();
+
+  // Appel non bloquant de l'envoi des valeurs lues par le dht
+  publishValuesDht();
 }
