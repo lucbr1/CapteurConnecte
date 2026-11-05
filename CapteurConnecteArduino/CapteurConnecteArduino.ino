@@ -1,23 +1,33 @@
 #include <MPS.h>
 #include "config.h"
 
+#define BUTTON_PIN 3
+
 // ---- Structures de payload ----
 // placer ici vos structures de payloads :
 struct __attribute__((packed)) CounterPayload {
   uint32_t value;
 };
 
+struct __attribute__((packed)) ButtonPayload {
+  bool state;
+};
+
+
 static_assert(sizeof(CounterPayload) == 4, "CounterPayload = 4 octets"); // Filet de sécurité à la compilation
+static_assert(sizeof(ButtonPayload) == 1, "CounterPayload = 1 octets"); // Filet de sécurité à la compilation
 
 // ---- Variables globales ----
 // placez ici vos variables à partager entre plusieurs contextes (ex : setup, loop, callbacks)
 static CounterPayload counter = {0};
+static ButtonPayload Button = {false};
 
 // ---- Subjects ----
 constexpr mps::Subject kSubHb = mps::makeSubject("hb_" DEVICE_NAME);
 // ... ajoutez vos sujets ici sur le même schéma que le heartbeat, mais en précisant la donnée envoyée,
 constexpr mps::Subject kSubStatusCounter = mps::makeSubject("status_" DEVICE_NAME "_counter");
 constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME "_reset_counter");
+constexpr mps::Subject kSubStatusButton = mps::makeSubject("status_" DEVICE_NAME "_button");
 
 // ---- Callbacks ----
 // Appelé lors de l'ouverture de la session (callback)
@@ -25,6 +35,7 @@ static void onSessionOpened() {
   Serial.println("Session opened!");
   // republiez ici l’état initial, la passerelle ne garde rien
   MPS.publishValue(kSubStatusCounter, counter);
+  MPS.publishValue(kSubStatusButton, Button);
 }
 
 // Appelé en cas d'échec d'envoi (callback)
@@ -65,6 +76,15 @@ void publishUpdateCounter(){
   }
 }
 
+// envoie la valeur du bouton si elle a changé 
+void publishStateButton(){
+  if (digitalRead(BUTTON_PIN) == Button.state) return;
+  Button.state = digitalRead(BUTTON_PIN);
+  // le message envoie :
+	// quand le bouton est appuye : 0
+	// quand le bouton n'est pas appuye : 1
+  MPS.publishValue(kSubStatusButton, Button.state);
+}
 // ---- Fonctions Arduino ----
 // Exécutée une fois au démarrage
 void setup() {
@@ -84,6 +104,9 @@ void setup() {
     return;
   }
 
+  // Configuration de la broche en entrée avec résistance de pull-up interne 
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+
   // démarrage du client MPS
   if(!MPS.begin(kGatewayMacAddress, DEVICE_NAME, kWifiChannel)) Serial.println("MPS: demarrage impossible");
 }
@@ -99,4 +122,6 @@ void loop() {
   // ... ajoutez vos envois de données et autres comportements **non bloquants**
   // Appel non bloquant de l'envoi du counter
   publishUpdateCounter();
+
+  publishStateButton();
 }

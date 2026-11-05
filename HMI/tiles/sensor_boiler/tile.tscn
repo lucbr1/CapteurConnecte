@@ -7,6 +7,7 @@
 [ext_resource type="FontFile" uid="uid://dy2aoacovd7nf" path="res://tiles/sensor_boiler/SpaceMono-Bold.ttf" id="5_bq384"]
 [ext_resource type="Script" uid="uid://cckwr06504sfp" path="res://core/state_icon.gd" id="5_mn2ah"]
 [ext_resource type="FontFile" uid="uid://cgmdfv1y5xbjs" path="res://tiles/sensor_boiler/SpaceMono-Regular.ttf" id="7_f7tlc"]
+[ext_resource type="Texture2D" uid="uid://bp2pgso08bww7" path="res://tiles/sensor_boiler/cercle.png" id="8_15dvh"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_lbf3d"]
 content_margin_bottom = 1.0
@@ -80,22 +81,54 @@ theme_override_fonts/font = ExtResource("7_f7tlc")
 theme_override_font_sizes/font_size = 20
 text = "node_id: ∅"
 
-[node name="CounterLabel" type="Label" parent="." unique_id=1650974214]
-unique_name_in_owner = true
+[node name="HBoxContainer2" type="HBoxContainer" parent="." unique_id=1044961618]
 layout_mode = 0
 offset_left = 16.0
 offset_top = 80.0
-offset_right = 248.0
-offset_bottom = 112.0
+offset_right = 320.0
+offset_bottom = 120.0
+
+[node name="CounterLabel" type="Label" parent="HBoxContainer2" unique_id=1650974214]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 2
 theme_override_fonts/font = ExtResource("7_f7tlc")
 theme_override_font_sizes/font_size = 20
 text = "counter: ∅"
 
-[node name="ResetButton" type="Button" parent="." unique_id=2105047133]
+[node name="ResetButton" type="Button" parent="HBoxContainer2" unique_id=2105047133]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+text = "Reset"
+
+[node name="ButtonStateLabel" type="Label" parent="." unique_id=1582900117]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 256.0
-offset_top = 80.0
-offset_right = 328.0
-offset_bottom = 111.0
-text = "Reset"
+offset_left = 16.0
+offset_top = 112.0
+offset_right = 192.0
+offset_bottom = 144.0
+theme_override_fonts/font = ExtResource("7_f7tlc")
+theme_override_font_sizes/font_size = 20
+text = "boutton appuyé"
+
+[node name="ButtonStateIcon" type="TextureRect" parent="ButtonStateLabel" unique_id=2138678380]
+unique_name_in_owner = true
+modulate = Color(0.23921569, 0.6, 0.28627452, 1)
+custom_maximum_size = Vector2(28, 28)
+layout_mode = 0
+offset_left = 184.0
+offset_top = 8.0
+offset_right = 203.0
+offset_bottom = 27.0
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("8_15dvh")
+expand_mode = 1
+script = ExtResource("5_mn2ah")
+state = false
+_modulate_time = 0.0
+_color_on = Color(0, 18.892157, 0, 0.99215686)
+_color_off = Color(18.892157, 0, 0, 1)
+metadata/_custom_type_script = "uid://cckwr06504sfp"
