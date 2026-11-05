@@ -10,6 +10,7 @@
 
 // Type de capteur
 #define DHTTYPE DHT11
+#define LED_PIN 2
 
 // ---- Structures de payload ----
 // placer ici vos structures de payloads :
@@ -27,6 +28,10 @@ struct __attribute__((packed)) ButtonPayload {
 struct __attribute__((packed)) DhtPayload {
   uint16_t temperatureCentiDegrees; // Température, en centièmes de degré Celsius
   uint8_t humidityPercents; //< Humidité relative, en %
+};
+
+struct __attribute__((packed)) LedPayload {
+  bool state;
 };
 
 
@@ -49,6 +54,7 @@ constexpr mps::Subject kSubStatusCounter = mps::makeSubject("status_" DEVICE_NAM
 constexpr mps::Subject kSubStatusButton = mps::makeSubject("status_" DEVICE_NAME "_button");
 constexpr mps::Subject kSubValuesDht = mps::makeSubject("status_" DEVICE_NAME "_dht");
 constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME "_reset_counter");
+constexpr mps::Subject kSubCmdLed = mps::makeSubject("cmd_" DEVICE_NAME "_state_led");
 
 
 // ---- Callbacks ----
@@ -71,6 +77,16 @@ static void onCmdResetCounter(const mps::FrameView& message, void*) {
   counter.value = 0;
   MPS.publishValue(kSubStatusCounter, counter); // l'IHM voit le résultat réel
 }
+
+static void onCmdLed(const mps::FrameView& message, void*) {
+  if (message.payloadLength != sizeof(LedPayload)) return;
+
+  LedPayload led;
+  memcpy(&led, message.payload, sizeof(LedPayload));
+
+  digitalWrite(LED_PIN, led.state ? HIGH : LOW);
+}
+
 
 // ---- Fonctions appelées par setup/loop ----
 // envoi de heartbeats réguliers sans bloquer (comparaison au temps écoulé sans delay())
@@ -134,6 +150,7 @@ void setup() {
   MPS.setSendFailedCallback(onSendFailed);
   // ... ajoutez vos callbacks à l'aide de MPS.on(const mps::Subject& subject, mps::MessageHandler handler, void* userContext = nullptr)
   MPS.on(kSubCmdResetCounter, onCmdResetCounter);
+  MPS.on(kSubCmdLed, onCmdLed);
 
   // constante d'adresse vide pour vérifier que l'adresse a été définie dans config.h
   static const uint8_t kUnsetMacAddress[6] = {0, 0, 0, 0, 0, 0};
@@ -144,6 +161,9 @@ void setup() {
 
   // Configuration de la broche en entrée avec résistance de pull-up interne 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
 
   // démarrage du client MPS
   if(!MPS.begin(kGatewayMacAddress, DEVICE_NAME, kWifiChannel)) Serial.println("MPS: demarrage impossible");
