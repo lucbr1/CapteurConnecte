@@ -5,6 +5,7 @@ const DEVICE_NAME = "sensor_l"
 const SUB_HB = "hb_" + DEVICE_NAME
 const SUB_STATUS_COUNTER = "status_" + DEVICE_NAME + "_counter"
 const SUB_STATUS_BUTTON = "status_" + DEVICE_NAME + "_button"
+const SUB_STATUS_DHT = "status_" + DEVICE_NAME + "_dht"
 const SUB_CMD_RESET = "cmd_" + DEVICE_NAME + "_reset_counter"
 const SUB_CMD_LED = "cmd_" + DEVICE_NAME + "_state_led"
 ## Délai sans heartbeat au-delà duquel le capteur est considéré comme bloqué (3,5 périodes de 1 s).
@@ -35,6 +36,7 @@ func get_subscriptions() -> PackedStringArray:
 	subscriptions.append(SUB_HB)
 	subscriptions.append(SUB_STATUS_COUNTER)
 	subscriptions.append(SUB_STATUS_BUTTON)
+	subscriptions.append(SUB_STATUS_DHT)
 	return subscriptions
 
 
@@ -62,13 +64,17 @@ func on_message(subject_name: String, source_id: int, payload: PackedByteArray) 
 	# Ajoutez vos messages à la suite
 	if subject_name == SUB_STATUS_COUNTER:
 		if payload.size() != 4: return # le contrat : 4 octets, sinon on ignore
-		%CounterLabel.text = "Compteur : %d" % payload.decode_u32(0)
+		%CounterLabel.text = "Compteur: %d" % payload.decode_u32(0)
 	if subject_name == SUB_STATUS_BUTTON:
 		if payload.size() != 1: return
 		# le message envoie :
 		# quand le bouton est appuye : 0
 		# quand le bouton n'est pas appuye : 1
 		%ButtonStateIcon.state = !payload.decode_u8(0)
+	if subject_name == SUB_STATUS_DHT:
+		if payload.size() != 3: return
+		%TemperatureLabel.text = "Temperature: %.2f °C" % (payload.decode_u16(0) / 100.0)
+		%HumidityLabel.text = "Humidity: %d %%" % payload.decode_u8(2)
 
 
 func _process(delta: float) -> void:

@@ -143,3 +143,17 @@ layout_mode = 2
 [node name="ButtonLedOnOff" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1174038639]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="TemperatureLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1832456841]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_fonts/font = ExtResource("7_f7tlc")
+theme_override_font_sizes/font_size = 20
+text = "temperature: ∅"
+
+[node name="HumidityLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=220535191]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_fonts/font = ExtResource("7_f7tlc")
+theme_override_font_sizes/font_size = 20
+text = "humidity: ∅"
