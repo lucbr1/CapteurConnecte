@@ -9,6 +9,9 @@ const SUB_STATUS_DHT = "status_" + DEVICE_NAME + "_dht"
 const SUB_CMD_RESET = "cmd_" + DEVICE_NAME + "_reset_counter"
 const SUB_CMD_LED_STATE = "set_" + DEVICE_NAME + "_state_led"
 const SUB_CMD_LED_COLOR = "set_" + DEVICE_NAME + "_color_led"
+const SUB_STATUS_LED_STATE = "status_" + DEVICE_NAME + "_state_led"
+const SUB_STATUS_LED_COLOR = "status_" + DEVICE_NAME + "_color_led"
+const LED_STATE_PAYLOAD_SIZE = 1
 const COUNTER_PAYLOAD_SIZE = 4
 const BUTTON_PAYLOAD_SIZE = 1
 const DHT_PAYLOAD_SIZE = 3
@@ -61,6 +64,8 @@ func get_subscriptions() -> PackedStringArray:
 	subscriptions.append(SUB_STATUS_COUNTER)
 	subscriptions.append(SUB_STATUS_BUTTON)
 	subscriptions.append(SUB_STATUS_DHT)
+	subscriptions.append(SUB_STATUS_LED_STATE)
+	subscriptions.append(SUB_STATUS_LED_COLOR)
 	return subscriptions
 
 
@@ -99,6 +104,12 @@ func on_message(subject_name: String, source_id: int, payload: PackedByteArray) 
 		if payload.size() != DHT_PAYLOAD_SIZE: return # le contrat : 3 octets, sinon on ignore
 		%TemperatureLabel.text = "temperature: %.2f °C" % (payload.decode_s16(DHT_TEMPERATURE_OFFSET) / 100.0)
 		%HumidityLabel.text = "humidity: %d %%" % payload.decode_u8(DHT_HUMIDITY_OFFSET)
+		if subject_name == SUB_STATUS_LED_STATE:
+			if payload.size() != LED_STATE_PAYLOAD_SIZE: return # le contrat : 1 octet, sinon on ignore
+			%ButtonLedOnOff.set_pressed_no_signal(payload.decode_u8(0) != 0)
+		if subject_name == SUB_STATUS_LED_COLOR:
+			if payload.size() != LED_COLOR_PAYLOAD_SIZE: return # le contrat : 3 octets, sinon on ignore
+			%ColorPickerLed.color = Color8(payload.decode_u8(0), payload.decode_u8(1), payload.decode_u8(2))
 
 
 func _process(delta: float) -> void:
@@ -114,7 +125,6 @@ func _on_sensor_connected():
 	%ConnectedIcon.state = true
 	%ButtonLedOnOff.disabled = false
 	%ButtonValidationColor.disabled = false
-	%ColorPickerLed.color = Color(1,1,1,1)
 
 
 func _on_sensor_disconnected():

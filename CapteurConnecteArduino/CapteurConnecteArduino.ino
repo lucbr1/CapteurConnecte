@@ -63,6 +63,8 @@ constexpr mps::Subject kSubValuesDht = mps::makeSubject("status_" DEVICE_NAME "_
 constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME "_reset_counter");
 constexpr mps::Subject kSubSetStateLed = mps::makeSubject("set_" DEVICE_NAME "_state_led");
 constexpr mps::Subject kSubSetColorLed = mps::makeSubject("set_" DEVICE_NAME "_color_led");
+constexpr mps::Subject kSubStatusStateLed = mps::makeSubject("status_" DEVICE_NAME "_state_led");
+constexpr mps::Subject kSubStatusColorLed = mps::makeSubject("status_" DEVICE_NAME "_color_led");
 
 
 // ---- Callbacks ----
@@ -74,6 +76,9 @@ static void onSessionOpened() {
   MPS.publishValue(kSubStatusButton, button);
   if (dhtIsWorking())
     MPS.publishValue(kSubValuesDht, dht);
+  // republication de l'état et de la couleur de la led
+  MPS.publishValue(kSubStatusStateLed, ledState);
+  MPS.publishValue(kSubStatusColorLed, ledColor);
 }
 
 // Appelé en cas d'échec d'envoi (callback)
@@ -93,7 +98,9 @@ static void onSetLedState(const mps::FrameView& message, void*) {
   if (message.payloadLength != sizeof(LedStatePayload)) return;
 
   memcpy(&ledState, message.payload, sizeof(LedStatePayload));
+  if (ledState.state > 1) ledState.state = 1; // valeur inattendue : on se ramène à allumé
   rgbLedWrite(kLedPin, ledState.state *ledColor.colorR, ledState.state *ledColor.colorG, ledState.state *ledColor.colorB );
+  MPS.publishValue(kSubStatusStateLed, ledState); // confirmation : l'IHM voit l'état réel
 }
 
 //change la couleur de la led si elle est allumé sinon elle est juste sauvegardé
@@ -102,6 +109,7 @@ static void onSetLedColor(const mps::FrameView& message, void*) {
 
   memcpy(&ledColor, message.payload, sizeof(LedColorPayload));
   rgbLedWrite(kLedPin, ledState.state *ledColor.colorR, ledState.state *ledColor.colorG, ledState.state *ledColor.colorB );
+  MPS.publishValue(kSubStatusColorLed, ledColor); // confirmation : l'IHM voit la couleur réelle
 }
 
 // ---- Fonctions appelées par setup/loop ----
