@@ -44,7 +44,7 @@
 
 | Offset | Champ | Type | Unité | Taille |
 | ----- | ----- | ----- | ----- | ----- |
-| 0 | temperatureCentiDegrees | uint16_t | Centième de degré | 2 octets |
+| 0 | temperatureCentiDegrees | int16_t | Centième de degré | 2 octets |
 | 2 | humidityPercents | uint8_t | Pourcentage (%) | 1 octet |
 
 ### `cmd_DEVICE_NAME_reset_counter`
@@ -53,13 +53,13 @@
 | ----- | ----- | ----- | ----- | ----- |
 | - | aucun | - | - | 0 octet |
 
-### `cmd_DEVICE_NAME_state_led`
+### `set_DEVICE_NAME_state_led`
 
 | Offset | Champ | Type | Unité | Taille |
 | ----- | ----- | ----- | ----- | ----- |
 | 0 | state | uint8_t | sans unité | 1 octet |
 
-### `cmd_DEVICE_NAME_color_led`
+### `set_DEVICE_NAME_color_led`
 
 | Offset | Champ | Type | Unité | Taille |
 | ----- | ----- | ----- | ----- | ----- |
