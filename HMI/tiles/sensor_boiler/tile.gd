@@ -11,15 +11,19 @@ const SUB_CMD_LED_STATE = "set_" + DEVICE_NAME + "_state_led"
 const SUB_CMD_LED_COLOR = "set_" + DEVICE_NAME + "_color_led"
 const SUB_STATUS_LED_STATE = "status_" + DEVICE_NAME + "_state_led"
 const SUB_STATUS_LED_COLOR = "status_" + DEVICE_NAME + "_color_led"
-const LED_STATE_PAYLOAD_SIZE = 1
 const COUNTER_PAYLOAD_SIZE = 4
 const BUTTON_PAYLOAD_SIZE = 1
 const DHT_PAYLOAD_SIZE = 3
+const LED_STATE_PAYLOAD_SIZE = 1
 const LED_COLOR_PAYLOAD_SIZE = 3
 const COUNTER_VALUE_OFFSET = 0
 const BUTTON_STATE_OFFSET = 0
 const DHT_TEMPERATURE_OFFSET = 0
 const DHT_HUMIDITY_OFFSET = 2
+const LED_STATE_OFFSET = 0
+const LED_COLOR_R_OFFSET = 0
+const LED_COLOR_G_OFFSET = 1
+const LED_COLOR_B_OFFSET = 2
 ## Délai sans heartbeat au-delà duquel le capteur est considéré comme bloqué (3,5 périodes de 1 s).
 const HB_TIMEOUT_S := 3.5
 ## Durée d'allumage de l'icône de heartbeat à chaque réception.
@@ -104,12 +108,12 @@ func on_message(subject_name: String, source_id: int, payload: PackedByteArray) 
 		if payload.size() != DHT_PAYLOAD_SIZE: return # le contrat : 3 octets, sinon on ignore
 		%TemperatureLabel.text = "temperature: %.2f °C" % (payload.decode_s16(DHT_TEMPERATURE_OFFSET) / 100.0)
 		%HumidityLabel.text = "humidity: %d %%" % payload.decode_u8(DHT_HUMIDITY_OFFSET)
-		if subject_name == SUB_STATUS_LED_STATE:
-			if payload.size() != LED_STATE_PAYLOAD_SIZE: return # le contrat : 1 octet, sinon on ignore
-			%ButtonLedOnOff.set_pressed_no_signal(payload.decode_u8(0) != 0)
-		if subject_name == SUB_STATUS_LED_COLOR:
-			if payload.size() != LED_COLOR_PAYLOAD_SIZE: return # le contrat : 3 octets, sinon on ignore
-			%ColorPickerLed.color = Color8(payload.decode_u8(0), payload.decode_u8(1), payload.decode_u8(2))
+	if subject_name == SUB_STATUS_LED_STATE:
+		if payload.size() != LED_STATE_PAYLOAD_SIZE: return # le contrat : 1 octet, sinon on ignore
+		%ButtonLedOnOff.set_pressed_no_signal(payload.decode_u8(LED_STATE_OFFSET) != 0)
+	if subject_name == SUB_STATUS_LED_COLOR:
+		if payload.size() != LED_COLOR_PAYLOAD_SIZE: return # le contrat : 3 octets, sinon on ignore
+		%ColorPickerLed.color = Color8(payload.decode_u8(LED_COLOR_R_OFFSET), payload.decode_u8(LED_COLOR_G_OFFSET), payload.decode_u8(LED_COLOR_B_OFFSET))
 
 
 func _process(delta: float) -> void:
