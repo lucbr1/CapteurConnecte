@@ -7,8 +7,8 @@ const SUB_STATUS_COUNTER = "status_" + DEVICE_NAME + "_counter"
 const SUB_STATUS_BUTTON = "status_" + DEVICE_NAME + "_button"
 const SUB_STATUS_DHT = "status_" + DEVICE_NAME + "_dht"
 const SUB_CMD_RESET = "cmd_" + DEVICE_NAME + "_reset_counter"
-const SUB_CMD_LED_STATE = "cmd_" + DEVICE_NAME + "_state_led"
-const SUB_CMD_LED_COLOR = "cmd_" + DEVICE_NAME + "_color_led"
+const SUB_CMD_LED_STATE = "set_" + DEVICE_NAME + "_state_led"
+const SUB_CMD_LED_COLOR = "set_" + DEVICE_NAME + "_color_led"
 ## Délai sans heartbeat au-delà duquel le capteur est considéré comme bloqué (3,5 périodes de 1 s).
 const HB_TIMEOUT_S := 3.5
 ## Durée d'allumage de l'icône de heartbeat à chaque réception.
@@ -30,7 +30,7 @@ var _connected: bool = false:
 func _ready() -> void:
 	super() # abonne la tuile
 	%ResetButton.pressed.connect(func(): publish(SUB_CMD_RESET, PackedByteArray(), true))
-	# envoie de l'etat du bouton pour modifier l'etat de la led
+	# Envoie la nouvelle consigne d'état de la LED
 	%ButtonLedOnOff.toggled.connect(func(toggled_on: bool):
 		var payload := PackedByteArray()
 		payload.append(1 if toggled_on else 0)
@@ -89,7 +89,7 @@ func on_message(subject_name: String, source_id: int, payload: PackedByteArray) 
 		%ButtonStateIcon.state = !payload.decode_u8(0)
 	if subject_name == SUB_STATUS_DHT:
 		if payload.size() != 3: return
-		%TemperatureLabel.text = "temperature: %.2f °C" % (payload.decode_u16(0) / 100.0)
+		%TemperatureLabel.text = "temperature: %.2f °C" % (payload.decode_s16(0) / 100.0)
 		%HumidityLabel.text = "humidity: %d %%" % payload.decode_u8(2)
 
 

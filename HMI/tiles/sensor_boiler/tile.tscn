@@ -140,7 +140,7 @@ metadata/_custom_type_script = "uid://cckwr06504sfp"
 [node name="HBoxContainerLed" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1714813836]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainerLed" unique_id=1902552442]
+[node name="LedLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainerLed" unique_id=1902552442]
 layout_mode = 2
 text = "led"
 
@@ -172,7 +172,7 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/icon_max_width = 62
-text = "Valider la couleur"
+text = "set color"
 
 [node name="TemperatureLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1832456841]
 unique_name_in_owner = true
