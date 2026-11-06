@@ -58,7 +58,7 @@ func on_message(subject_name: String, source_id: int, payload: PackedByteArray) 
 	# on met à jour le counter
 	if subject_name == SUB_STATUS_COUNTER:
 		if payload.size() != 4: return # le contrat : 4 octets, sinon on ignore
-		%CounterLabel.text = "Compteur : %d" % payload.decode_u32(0)
+		%CounterLabel.text = "counter: %d" % payload.decode_u32(0)
 
 
 func _process(delta: float) -> void:

@@ -41,8 +41,8 @@ static void onCmdResetCounter(const mps::FrameView& message, void*) {
 // envoi de heartbeats réguliers sans bloquer (comparaison au temps écoulé sans delay())
 void publishHeartbeat(){
   static uint32_t lastHeartbeatTimeMs = 0;
-  static const uint16_t kHbPeriod = 1000;
-  if(millis() - lastHeartbeatTimeMs >= kHbPeriod) {
+  static const uint16_t kHbPeriodMs = 1000;
+  if(millis() - lastHeartbeatTimeMs >= kHbPeriodMs) {
     lastHeartbeatTimeMs = millis();
     
     // L'envoi de heartbeats depuis loop() assure au récepteur (IHM) que le code "métier" n'est pas planté
@@ -53,8 +53,8 @@ void publishHeartbeat(){
 // envoi et mise à jour du counter régulière sans bloquer (comparaison au temps écoulé sans delay())
 void publishUpdateCounter(){
   static uint32_t lastCounterTimeMs = 0;
-  static const uint16_t kcounterPeriod = 2000;
-  if(millis() - lastCounterTimeMs >= kcounterPeriod) {
+  static const uint16_t kcounterPeriodMs = 2000;
+  if(millis() - lastCounterTimeMs >= kcounterPeriodMs) {
     lastCounterTimeMs = millis();
     counter.value++;
 
