@@ -118,7 +118,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_fonts/font = ExtResource("7_f7tlc")
 theme_override_font_sizes/font_size = 20
-text = "boutton appuyé"
+text = "button pushed"
 
 [node name="ButtonStateIcon" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainerButtonState" unique_id=2138678380]
 unique_name_in_owner = true

@@ -30,11 +30,14 @@ var _connected: bool = false:
 func _ready() -> void:
 	super() # abonne la tuile
 	%ResetButton.pressed.connect(func(): publish(SUB_CMD_RESET, PackedByteArray(), true))
+	# envoie de l'etat du bouton pour modifier l'etat de la led
 	%ButtonLedOnOff.toggled.connect(func(toggled_on: bool):
 		var payload := PackedByteArray()
 		payload.append(1 if toggled_on else 0)
-		publish(SUB_CMD_LED_STATE, payload, true)  # garde le 3e argument comme pour le reset
+		publish(SUB_CMD_LED_STATE, payload, true)
 	)
+	# envoie un payload des trois couleurs quand on appuie sur le bouton de validaton
+	# pour modifier la couleur de la led
 	%ButtonValidationColor.pressed.connect(func():
 		var color = %ColorPickerLed.color
 		var payload := PackedByteArray()
@@ -77,7 +80,7 @@ func on_message(subject_name: String, source_id: int, payload: PackedByteArray) 
 	# Ajoutez vos messages à la suite
 	if subject_name == SUB_STATUS_COUNTER:
 		if payload.size() != 4: return # le contrat : 4 octets, sinon on ignore
-		%CounterLabel.text = "Compteur: %d" % payload.decode_u32(0)
+		%CounterLabel.text = "counter: %d" % payload.decode_u32(0)
 	if subject_name == SUB_STATUS_BUTTON:
 		if payload.size() != 1: return
 		# le message envoie :
@@ -86,8 +89,8 @@ func on_message(subject_name: String, source_id: int, payload: PackedByteArray) 
 		%ButtonStateIcon.state = !payload.decode_u8(0)
 	if subject_name == SUB_STATUS_DHT:
 		if payload.size() != 3: return
-		%TemperatureLabel.text = "Temperature: %.2f °C" % (payload.decode_u16(0) / 100.0)
-		%HumidityLabel.text = "Humidity: %d %%" % payload.decode_u8(2)
+		%TemperatureLabel.text = "temperature: %.2f °C" % (payload.decode_u16(0) / 100.0)
+		%HumidityLabel.text = "humidity: %d %%" % payload.decode_u8(2)
 
 
 func _process(delta: float) -> void:
