@@ -64,6 +64,8 @@ static void onSessionOpened() {
   // republiez ici l’état initial, la passerelle ne garde rien
   MPS.publishValue(kSubStatusCounter, counter);
   MPS.publishValue(kSubStatusButton, button);
+  if (dhtIsWorking())
+    MPS.publishValue(kSubValuesDht, dht);
 }
 
 // Appelé en cas d'échec d'envoi (callback)
@@ -89,6 +91,18 @@ static void onCmdLed(const mps::FrameView& message, void*) {
 
 
 // ---- Fonctions appelées par setup/loop ----
+// vérifie si le capteur dht fonctionne correctement
+bool dhtIsWorking() {
+  // Vérification du bon fonctionnement du capteur
+  static float humidity = 0;
+  static float temperature = 0;
+  humidity = dhtObject.readHumidity();
+  temperature = dhtObject.readTemperature();
+  // Si le câble est débranché, h et t ne seront pas des nombres valides (NaN)
+  // ou renverront des valeurs hors normes.
+  return !(isnan(humidity) || isnan(temperature) || humidity > 100 || temperature > 100);
+}
+
 // envoi de heartbeats réguliers sans bloquer (comparaison au temps écoulé sans delay())
 void publishHeartbeat(){
   static uint32_t lastHeartbeatTimeMs = 0;
@@ -131,6 +145,8 @@ void publishValuesDht(){
   if(millis() - lastDhtTimeMs >= kDhtPeriod) {
     lastDhtTimeMs = millis();
 
+    if (!dhtIsWorking()) return;
+
     dht.temperatureCentiDegrees = uint16_t(dhtObject.readTemperature() * 100);// on multiplie par 100 pour récupérer les centièmes
     dht.humidityPercents = uint8_t(dhtObject.readHumidity());
     
@@ -170,10 +186,6 @@ void setup() {
 
   // Initialise la capteur DHT11
   dhtObject.begin();
-  // Vérification du bon fonctionnement du capteur
-  if (isnan(dhtObject.readHumidity()) && isnan(dhtObject.readTemperature())) {
-    Serial.println("DHT: demarrage impossible (capteur introuvable ou defectueux)");
-  }
 }
 
 // Exécutée en boucle (= while(true))
