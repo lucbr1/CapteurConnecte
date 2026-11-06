@@ -13,8 +13,8 @@
 content_margin_bottom = 1.0
 
 [node name="TileSensorDemo" type="Panel" unique_id=304170558]
-custom_minimum_size = Vector2(336, 336)
-custom_maximum_size = Vector2(336, 336)
+custom_minimum_size = Vector2(360, 400)
+custom_maximum_size = Vector2(360, 400)
 offset_right = 360.0
 offset_bottom = 240.0
 mouse_filter = 2
@@ -137,12 +137,42 @@ _color_on = Color(0, 18.892157, 0, 0.99215686)
 _color_off = Color(18.892157, 0, 0, 1)
 metadata/_custom_type_script = "uid://cckwr06504sfp"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1714813836]
+[node name="HBoxContainerLed" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1714813836]
 layout_mode = 2
 
-[node name="ButtonLedOnOff" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1174038639]
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainerLed" unique_id=1902552442]
+layout_mode = 2
+text = "led"
+
+[node name="ButtonLedOnOff" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainerLed" unique_id=1174038639]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainerbuttonColor" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainerLed" unique_id=619241536]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ColorPickerLed" type="ColorPicker" parent="MarginContainer/VBoxContainer/HBoxContainerLed/VBoxContainerbuttonColor" unique_id=1751472779]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+alignment = 2
+edit_alpha = false
+edit_intensity = false
+picker_shape = 4
+sampler_visible = false
+color_modes_visible = false
+hex_visible = false
+presets_visible = false
+
+[node name="ButtonValidationColor" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainerLed/VBoxContainerbuttonColor" unique_id=1997612263]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/icon_max_width = 62
+text = "Valider la couleur"
 
 [node name="TemperatureLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1832456841]
 unique_name_in_owner = true

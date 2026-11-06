@@ -8,9 +8,12 @@
 // Broche du capteur
 #define DHT_PIN 0
 
+// Broche de la led 
+#define LED_PIN 2
+
 // Type de capteur
 #define DHTTYPE DHT11
-#define LED_PIN 2
+
 
 // ---- Structures de payload ----
 // placer ici vos structures de payloads :
@@ -21,7 +24,7 @@ struct __attribute__((packed)) CounterPayload {
 
 /// État du bouton poussoir.
 struct __attribute__((packed)) ButtonPayload {
-  bool state;
+  uint8_t state;
 };
 
 /// Température et humidité mesurées par le DHT11.
@@ -30,20 +33,31 @@ struct __attribute__((packed)) DhtPayload {
   uint8_t humidityPercents; //< Humidité relative, en %
 };
 
-struct __attribute__((packed)) LedPayload {
-  bool state;
+// statue de la led
+struct __attribute__((packed)) LedStatePayload {
+  uint8_t state;
 };
 
+//couleur de la led
+struct __attribute__((packed)) LedColorPayload {
+  uint8_t colorR;
+  uint8_t colorG;
+  uint8_t colorB;
+};
 
 static_assert(sizeof(CounterPayload) == 4, "CounterPayload = 4 octets"); // Filet de sécurité à la compilation
 static_assert(sizeof(ButtonPayload) == 1, "ButtonPayload = 1 octets"); // Filet de sécurité à la compilation
 static_assert(sizeof(DhtPayload) == 3, "DhtPayload = 3 octets"); // Filet de sécurité à la compilation
+static_assert(sizeof(LedStatePayload) == 1, "LedStatePayload = 1 octets"); // Filet de sécurité à la compilation
+static_assert(sizeof(LedColorPayload) == 3, "LedColorPayload = 3 octets"); // Filet de sécurité à la compilation
 
 // ---- Variables globales ----
 // placez ici vos variables à partager entre plusieurs contextes (ex : setup, loop, callbacks)
 static CounterPayload counter = {0};
 static ButtonPayload button = {false};
 static DhtPayload dht = {0, 0};
+static uint8_t ledState = 0;
+static LedColorPayload ledColor = {255,255,255};
 // Declare un objet de type DHT
 DHT dhtObject(DHT_PIN, DHTTYPE);
 
@@ -54,7 +68,8 @@ constexpr mps::Subject kSubStatusCounter = mps::makeSubject("status_" DEVICE_NAM
 constexpr mps::Subject kSubStatusButton = mps::makeSubject("status_" DEVICE_NAME "_button");
 constexpr mps::Subject kSubValuesDht = mps::makeSubject("status_" DEVICE_NAME "_dht");
 constexpr mps::Subject kSubCmdResetCounter = mps::makeSubject("cmd_" DEVICE_NAME "_reset_counter");
-constexpr mps::Subject kSubCmdLed = mps::makeSubject("cmd_" DEVICE_NAME "_state_led");
+constexpr mps::Subject kSubCmdStateLed = mps::makeSubject("cmd_" DEVICE_NAME "_state_led");
+constexpr mps::Subject kSubCmdColorLed = mps::makeSubject("cmd_" DEVICE_NAME "_color_led");
 
 
 // ---- Callbacks ----
@@ -66,6 +81,8 @@ static void onSessionOpened() {
   MPS.publishValue(kSubStatusButton, button);
   if (dhtIsWorking())
     MPS.publishValue(kSubValuesDht, dht);
+  MPS.publishValue(kSubCmdStateLed, ledState);
+  MPS.publishValue(kSubCmdColorLed, ledColor);
 }
 
 // Appelé en cas d'échec d'envoi (callback)
@@ -80,15 +97,27 @@ static void onCmdResetCounter(const mps::FrameView& message, void*) {
   MPS.publishValue(kSubStatusCounter, counter); // l'IHM voit le résultat réel
 }
 
-static void onCmdLed(const mps::FrameView& message, void*) {
-  if (message.payloadLength != sizeof(LedPayload)) return;
+static void onCmdLedState(const mps::FrameView& message, void*) {
+  if (message.payloadLength != sizeof(LedStatePayload)) return;
 
-  LedPayload led;
-  memcpy(&led, message.payload, sizeof(LedPayload));
-
-  digitalWrite(LED_PIN, led.state ? HIGH : LOW);
+  LedStatePayload led;
+  memcpy(&led, message.payload, sizeof(LedStatePayload));
+  ledState = led.state;
+  rgbLedWrite(LED_PIN,ledState *ledColor.colorR,ledState *ledColor.colorG,ledState *ledColor.colorB );
 }
 
+static void onCmdLedColor(const mps::FrameView& message, void*) {
+  if (message.payloadLength != sizeof(LedColorPayload)) return;
+
+  LedColorPayload led;
+  memcpy(&led, message.payload, sizeof(LedColorPayload));
+  Serial.print("Valeur : ");
+  Serial.println(led.colorR);
+  Serial.println(led.colorG);
+  Serial.println(led.colorB);
+  ledColor = led;
+  rgbLedWrite(LED_PIN,ledState *ledColor.colorR,ledState *ledColor.colorG,ledState *ledColor.colorB );
+}
 
 // ---- Fonctions appelées par setup/loop ----
 // vérifie si le capteur dht fonctionne correctement
@@ -166,7 +195,8 @@ void setup() {
   MPS.setSendFailedCallback(onSendFailed);
   // ... ajoutez vos callbacks à l'aide de MPS.on(const mps::Subject& subject, mps::MessageHandler handler, void* userContext = nullptr)
   MPS.on(kSubCmdResetCounter, onCmdResetCounter);
-  MPS.on(kSubCmdLed, onCmdLed);
+  MPS.on(kSubCmdStateLed, onCmdLedState);
+  MPS.on(kSubCmdColorLed, onCmdLedColor);
 
   // constante d'adresse vide pour vérifier que l'adresse a été définie dans config.h
   static const uint8_t kUnsetMacAddress[6] = {0, 0, 0, 0, 0, 0};

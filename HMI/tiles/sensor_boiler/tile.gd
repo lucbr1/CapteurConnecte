@@ -7,7 +7,8 @@ const SUB_STATUS_COUNTER = "status_" + DEVICE_NAME + "_counter"
 const SUB_STATUS_BUTTON = "status_" + DEVICE_NAME + "_button"
 const SUB_STATUS_DHT = "status_" + DEVICE_NAME + "_dht"
 const SUB_CMD_RESET = "cmd_" + DEVICE_NAME + "_reset_counter"
-const SUB_CMD_LED = "cmd_" + DEVICE_NAME + "_state_led"
+const SUB_CMD_LED_STATE = "cmd_" + DEVICE_NAME + "_state_led"
+const SUB_CMD_LED_COLOR = "cmd_" + DEVICE_NAME + "_color_led"
 ## Délai sans heartbeat au-delà duquel le capteur est considéré comme bloqué (3,5 périodes de 1 s).
 const HB_TIMEOUT_S := 3.5
 ## Durée d'allumage de l'icône de heartbeat à chaque réception.
@@ -29,8 +30,20 @@ var _connected: bool = false:
 func _ready() -> void:
 	super() # abonne la tuile
 	%ResetButton.pressed.connect(func(): publish(SUB_CMD_RESET, PackedByteArray(), true))
-	%ButtonLedOnOff.toggled.connect(func(toggled_on: bool): publish(SUB_CMD_LED, PackedByteArray(), toggled_on))
-
+	%ButtonLedOnOff.toggled.connect(func(toggled_on: bool):
+		var payload := PackedByteArray()
+		payload.append(1 if toggled_on else 0)
+		publish(SUB_CMD_LED_STATE, payload, true)  # garde le 3e argument comme pour le reset
+	)
+	%ButtonValidationColor.pressed.connect(func():
+		var color = %ColorPickerLed.color
+		var payload := PackedByteArray()
+		payload.resize(3)
+		payload.encode_u8(0, int(color.r * 255))
+		payload.encode_u8(1, int(color.g * 255))
+		payload.encode_u8(2, int(color.b * 255))
+		publish(SUB_CMD_LED_COLOR, payload, true)
+	)
 func get_subscriptions() -> PackedStringArray:
 	var subscriptions: PackedStringArray = []
 	subscriptions.append(SUB_HB)
