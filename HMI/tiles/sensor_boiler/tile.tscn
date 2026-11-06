@@ -109,6 +109,20 @@ layout_mode = 2
 size_flags_vertical = 4
 text = "Reset"
 
+[node name="TemperatureLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1832456841]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_fonts/font = ExtResource("7_f7tlc")
+theme_override_font_sizes/font_size = 20
+text = "temperature: ∅"
+
+[node name="HumidityLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=220535191]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_fonts/font = ExtResource("7_f7tlc")
+theme_override_font_sizes/font_size = 20
+text = "humidity: ∅"
+
 [node name="HBoxContainerButtonState" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=2958107]
 layout_mode = 2
 theme_override_constants/separation = 23
@@ -173,17 +187,3 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/icon_max_width = 62
 text = "set color"
-
-[node name="TemperatureLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1832456841]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_fonts/font = ExtResource("7_f7tlc")
-theme_override_font_sizes/font_size = 20
-text = "temperature: ∅"
-
-[node name="HumidityLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=220535191]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_fonts/font = ExtResource("7_f7tlc")
-theme_override_font_sizes/font_size = 20
-text = "humidity: ∅"
